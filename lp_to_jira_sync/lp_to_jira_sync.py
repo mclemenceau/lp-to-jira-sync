@@ -272,8 +272,7 @@ def sync(taskset, issue, config):
     # sync Status
     if issue.fields.status.name == 'Untriaged':
         print("-> Updating Status for {} to Triaged".format(issue.key))
-        comment = ('{{jira-bot}} {} should be in '
-                   'Triaged'.format(config.tag)
+        comment = ('{{jira-bot}} {} should be in Triaged'.format(config.tag))
         config.jira.add_comment(issue, comment)
         config.jira.transition_issue(
             issue,
