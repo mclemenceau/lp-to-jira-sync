@@ -400,17 +400,49 @@ def process_issues(all_tasks, all_issues, config):
 
 def main(args=None):
     parser = argparse.ArgumentParser(
-        description="A script"
+        description='A script that allows to sync bug between Lanchpad '
+                    'and Jira'
     )
+    parser.add_argument(
+        '-p',
+        '--jira-project',
+        required=True,
+        dest='project', type=str,
+        help="The JIRA project string key")
+    parser.add_argument(
+        '-t',
+        '--lp-tag',
+        required=True,
+        dest='tag', type=str,
+        help='The LaunchPad bug tag')
+    parser.add_argument(
+        '-T',
+        '--lp-team',
+        dest='team', type=str,
+        help='The LaunchPad team with subscribed packages')
+    parser.add_argument(
+        '-d',
+        '--dry-run',
+        dest='dry_run',
+        action='store_true',
+        help='We do not touch anything in Jira')
+    parser.add_argument(
+        '-i',
+        '--team-ids',
+        dest='team_ids',
+        type=str,
+        help='mapping of team id between LP and Jira for assignements')
 
     opts = parser.parse_args(args)
-    # TODO These will be command line parameters soon
+
     config = SyncConfig(
-        project="FS",
-        lp_tag="todo",
-        lp_team="team",
+        project=opts.project,
+        lp_tag=opts.tag,
+        lp_team=opts.team,
         special_packages=['subiquity', 'netplan', 'apport'],
-        dry_run=False)
+        dry_run=opts.dry_run,
+        team_ids_json=opts.team_ids
+        )
 
     print("Found {} subscribed packages by team {}"
           .format(len(config.restricted_pkgs), config.team))
