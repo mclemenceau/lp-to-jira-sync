@@ -188,6 +188,7 @@ def find_bugs_in_jira_project(jira_api, project):
     while True:
         start_index = issue_index * issue_batch
         request = "project = {} " \
+            "AND type = Bug " \
             "AND summary ~ \"LP#\" " \
             "AND status not in (Done, \"Rejected\")""".format(project)
         issues = jira_api.search_issues(request, startAt=start_index)
