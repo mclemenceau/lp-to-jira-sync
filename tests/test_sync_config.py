@@ -191,3 +191,43 @@ def test_init_with_team_mapping(mock_launchpad,
     mock_open.assert_called_once_with('team_ids.json')
 
 
+@patch('lp_to_jira_sync.sync_config.json')
+@patch('lp_to_jira_sync.sync_config.open')
+@patch('lp_to_jira_sync.sync_config.Launchpad')
+@patch('lp_to_jira_sync.sync_config.jira_config')
+def test_init_with_team_mapping(mock_launchpad,
+                                mock_jira_config,
+                                mock_open,
+                                mock_json):
+    mock_jira = MagicMock()
+    mock_jira_config.return_value = MagicMock(jira=mock_jira)
+
+    mock_lp = MagicMock()
+    mock_launchpad.login_with.return_value = mock_lp
+
+    component_mapping = {
+        "boot": ["grub2", "shim", "u-boot"],
+        "crypto": ["openssl", "openssh", "cryptsetup"]
+    }
+    mock_json.load.return_value = component_mapping
+
+    config = SyncConfig(
+        jira=mock_jira,
+        lp_api=mock_lp,
+        project='TEST_PROJECT',
+        packages_mapping_json="ids.json")
+
+    assert config.jira == mock_jira
+    assert config.project == 'TEST_PROJECT'
+    assert config.lp == mock_lp
+    assert config.tag == ''
+    assert config.team == ''
+    assert config.restricted_pkgs == []
+    assert config.special_packages == []
+    assert config.dry_run is True
+    assert config.args is None
+    assert "grub2" in config.components_ids["boot"]
+    assert "shim" in config.components_ids["boot"]
+    assert "openssl" in config.components_ids["crypto"]
+
+    mock_open.assert_called_once_with('ids.json')

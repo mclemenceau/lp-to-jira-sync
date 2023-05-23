@@ -19,6 +19,7 @@ class SyncConfig:
                  lp_team="",
                  team_ids_json="",
                  special_packages=[],
+                 packages_mapping_json="",
                  dry_run=True,
                  args=None):
 
@@ -35,6 +36,10 @@ class SyncConfig:
             self.jira = jira
 
         self.project = project
+
+        self.jira_components = [
+            x.name for x in self.jira.project_components(project)
+            ]
 
         if not lp_api:
             print("initializing LaunchPad API ....")
@@ -68,8 +73,21 @@ class SyncConfig:
             with open(team_ids_json) as file:
                 self.team_ids = json.load(file)
 
+        self.components_ids = []
+        if packages_mapping_json:
+            with open(packages_mapping_json) as file:
+                self.components_ids = json.load(file)
+
         self.special_packages = special_packages
 
         self.dry_run = dry_run
 
         self.args = args
+
+    def package_to_component(self, package):
+        if self.components_ids:
+            for comp in self.components_ids:
+                if package in self.components_ids[comp]:
+                    return comp
+
+        return ""

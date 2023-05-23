@@ -316,6 +316,28 @@ def sync(taskset, issue, config):
             issue.key, importance))
         issue.update(priority={"name": importance})
 
+    # Sync Jira Component with Package in Launchpad if mapping available
+    if config.jira_components:
+        pkg_name = taskset[0].title.split()[3]
+        # remove sneaky trailing ':'
+        if pkg_name[-1] == ':':
+            pkg_name = pkg_name[:-1]
+        # Retrieve the proper LP component
+        component = config.package_to_component(pkg_name)
+        # Retrieve the Jira components if any
+        issue_components = [x.name for x in issue.fields.components]
+
+        # If there is a LaunchPad component and it isn't already set in Jira
+        # and is an available Component on the Jira project
+        if (
+            component and
+            component not in issue_components and
+            component in config.jira_components
+        ):
+            print("-> Updating Components for {} to {}".format(issue.key, component))
+            issue.update(fields={"components": []})
+            issue.update(update={"components": [{"add": {"name": component,}}],},)
+
 
 def process_issues(all_tasks, all_issues, config):
     # Between All subscribed bug in LP and all bug imported in JIRA, there's
@@ -434,6 +456,13 @@ def main(args=None):
         type=str,
         help='mapping of team id between LP and Jira for assignements')
 
+    parser.add_argument(
+        '-c',
+        '--components-mapping',
+        dest='components_mapping',
+        type=str,
+        help='mapping of Jira Components to Launchpad packages')
+
     opts = parser.parse_args(args)
 
     config = SyncConfig(
@@ -442,7 +471,8 @@ def main(args=None):
         lp_team=opts.team,
         special_packages=['subiquity', 'netplan', 'apport'],
         dry_run=opts.dry_run,
-        team_ids_json=opts.team_ids
+        team_ids_json=opts.team_ids,
+        packages_mapping_json=opts.components_mapping
         )
 
     print("Found {} subscribed packages by team {}"
