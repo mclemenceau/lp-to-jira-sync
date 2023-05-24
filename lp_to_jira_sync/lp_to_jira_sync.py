@@ -309,7 +309,7 @@ def sync(taskset, issue, config):
             # In that case we assign the bug the same person from LP
             if not jira_who:
                 account = config.team_ids[lp_who]['id']
-                issue.update(assignee={'id': account}, notify=False)
+                issue.update(assignee={'id': account})
                 print("-> Updating assignee for {} to {}".format(
                     issue.key,
                     config.team_ids[lp_who]['name']))
@@ -490,7 +490,8 @@ def main(args=None):
         project=opts.project,
         lp_tag=opts.tag,
         lp_team=opts.team,
-        special_packages=['subiquity', 'netplan', 'apport'],
+        # TODO : Special packages should be a configuration option
+        special_packages=['subiquity', 'netplan', 'apport', 'ubuntu-cdimage'],
         dry_run=opts.dry_run,
         team_ids_json=opts.team_ids,
         packages_mapping_json=opts.components_mapping
