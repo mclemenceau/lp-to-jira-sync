@@ -229,6 +229,7 @@ def sync(taskset, issue, config):
         return False
 
     bug = taskset[0].bug
+    jira_comment = ""
 
     # Title
     # Title may change in LP and we want to make sure
@@ -240,9 +241,9 @@ def sync(taskset, issue, config):
     if lp_title not in jira_title:
         print("-> Syncing title for {}".format(issue.key))
         jira_title = jira_title[:jira_title.index(']')+2] + lp_title
-        config.jira.add_comment(
-            issue,
-            ('{{jira-bot}} Fixed out of sync title with LP: #%s') % (bug.id)
+        jira_comment = jira_comment + (
+            ('{{lp-to-jira-sync}} Fixed out of sync title with LP: #%s\n')
+            % (bug.id)
         )
         issue.update(summary=jira_title)
 
@@ -261,10 +262,11 @@ def sync(taskset, issue, config):
         if sponsor in [x['person_link']
                        for x in bug.subscriptions.entries]:
             print(" - Fixing status to Sponsoring Needed")
-            comment = ('{{jira-bot}} ubuntu sponsors team is subscribed '
-                       'to the bug which means it should move to Sponsoring '
-                       ' Needed')
-            config.jira.add_comment(issue, comment)
+            jira_comment = jira_comment + (
+                ('{{lp-to-jira-sync}} ubuntu sponsors team is subscribed '
+                 'to the bug which means it should move to Sponsoring '
+                 'Needed')
+            )
             config.jira.transition_issue(
                 issue,
                 transition='Sponsoring Needed'
@@ -273,8 +275,9 @@ def sync(taskset, issue, config):
     # sync Status
     if issue.fields.status.name == 'Untriaged':
         print("-> Updating Status for {} to Triaged".format(issue.key))
-        comment = ('{{jira-bot}} {} should be in Triaged'.format(config.tag))
-        config.jira.add_comment(issue, comment)
+        jira_comment = jira_comment + (
+           ('{{lp-to-jira-sync}} %s should be Triaged\n') % (config.tag)
+        )
         config.jira.transition_issue(
             issue,
             transition='All'
@@ -288,6 +291,10 @@ def sync(taskset, issue, config):
     if checkstr and checkstr != jiracheckstr:
         print("-> Updating Checklist for {}".format(issue.key))
         issue.update(fields={'customfield_10039': checkstr})
+        jira_comment = jira_comment + (
+            ('{{lp-to-jira-sync}} Updating Checklist according to LP: #%s\n')
+            % (bug.id)
+        )
 
     # Assignee
     # If a team mapping has been provided we can look at for a match between
@@ -302,10 +309,14 @@ def sync(taskset, issue, config):
             # In that case we assign the bug the same person from LP
             if not jira_who:
                 account = config.team_ids[lp_who]['id']
-    #            issue.update(assignee={'id':account})
+                issue.update(assignee={'id': account}, notify=False)
                 print("-> Updating assignee for {} to {}".format(
                     issue.key,
                     config.team_ids[lp_who]['name']))
+                jira_comment = jira_comment + (
+                    ('{{lp-to-jira-sync}} Updating Assignee according to '
+                     'LP: #%s\n') % (bug.id)
+                )
 
     # Importance
     # We should reflect the launchpad bug Priority with the Jira issue priority
@@ -315,6 +326,10 @@ def sync(taskset, issue, config):
         print("-> Syncing Priority for {} to {}".format(
             issue.key, importance))
         issue.update(priority={"name": importance})
+        jira_comment = jira_comment + (
+            ('{{lp-to-jira-sync}} Updating Priority according to LP: #%s\n')
+            % (bug.id)
+        )
 
     # Sync Jira Component with Package in Launchpad if mapping available
     if config.jira_components:
@@ -334,9 +349,18 @@ def sync(taskset, issue, config):
             component not in issue_components and
             component in config.jira_components
         ):
-            print("-> Updating Components for {} to {}".format(issue.key, component))
+            print("-> Updating Components for {} to {}"
+                  .format(issue.key, component))
             issue.update(fields={"components": []})
-            issue.update(update={"components": [{"add": {"name": component,}}],},)
+            issue.update(
+                update={"components": [{"add": {"name": component, }}], }, )
+            jira_comment = jira_comment + (
+                ('{{lp-to-jira-sync}} Updating Component according to '
+                 'LP: #%s\n') % (bug.id)
+            )
+
+    if jira_comment:
+        config.jira.add_comment(issue, jira_comment)
 
 
 def process_issues(all_tasks, all_issues, config):
@@ -359,7 +383,7 @@ def process_issues(all_tasks, all_issues, config):
     #   Could have been unsubscribed in LP, or added in JIRA and multiple
     #   actions are possible
     #   For now we will go the hard way and REJECT any bug in Jira that isn't
-    #   tagged 
+    #   tagged
 
     for bugset in all_tasks:
         if bugset in all_issues:
@@ -381,16 +405,14 @@ def process_issues(all_tasks, all_issues, config):
             jira_issue = is_bug_in_jira(config.jira, bugset, config.project)
             if jira_issue and (str(jira_issue.fields.status)
                                in ('Done', 'Rejected')):
-                comment = ("""
-                    This Bug is still active and tagged {} in LP.
-                    It wil be moved back to the Backlog as Triaged.
-                    If no work is necessary or the bug isn't relevant anymore,
-                    please untag the bug in LP.
-                    """.format(config.tag))
+                comment = (
+                    '{{lp-to-jira-sync}} This Bug is still active and tagged '
+                    '%s in LP. It wil be moved to the Backlog as Triaged. '
+                    'If no work is necessary or the bug isn\'t relevant '
+                    'anymore, please untag the bug in LP.') % (config.tag)
                 if not config.dry_run:
                     config.jira.transition_issue(
                         jira_issue,
-                        # All = Triaged
                         transition='All'
                     )
                     config.jira.add_comment(jira_issue, comment)
@@ -411,11 +433,10 @@ def process_issues(all_tasks, all_issues, config):
         # bugs only active in Jira
         print("C: LP: #{} [{}] is in Jira as {} but not tagged in LP".format(
             issue[0], issue[1],  all_issues[issue].key))
-        comment = ('LP: #{} is either not tagged {} or'
-                   ' active at this time. '
-                   'Moving issue to Done. If this is incorrect, check the '
-                   'status of the bug in LaunchPad.').format(
-                    issue[0], config.tag)
+        comment = (
+            '{{lp-to-jira-sync}} LP: #%s is either not tagged %s or active at '
+            'this time. Moving issue to Done. If this is incorrect, check the '
+            'status of the bug in LaunchPad.') % (issue[0], config.tag)
         if not config.dry_run:
             config.jira.transition_issue(all_issues[issue], transition="Done")
             config.jira.add_comment(all_issues[issue], comment)
@@ -488,8 +509,8 @@ def main(args=None):
                 'Fix Released']
 
     tasks = config.lp.bugs.searchTasks(tags=config.tag, status=statuses)
-    print(" - Found {} () bug's task{} in LaunchPad".format(
-        len(tasks), "s" if len(tasks) > 1 else "", config.tag)
+    print(" - Found {} bug's task{} in LaunchPad".format(
+        len(tasks), "s" if len(tasks) > 1 else "")
     )
 
     # Remove tasks that affects non ubscribed ackages
