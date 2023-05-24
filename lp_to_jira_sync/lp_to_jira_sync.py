@@ -140,12 +140,9 @@ def refine_tasks(tasks, config):
     results = {}
     for task in tasks:
         # It is much more efficient to parse the task title than accessing the
-        # LP API
+        # LP API to get the bug id
         title = task.title.split()
-        name = title[3]
-        # remove sneaky trailing ':'
-        if name[-1] == ':':
-            name = name[:-1]
+        name = task.bug_target_name.split()[0]
 
         # Create the taskset identifier
         pair = (int(title[1][1:]), name)
