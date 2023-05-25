@@ -221,12 +221,20 @@ def jira_priority(issue):
     return issue.fields.priority.name
 
 
-def sync(taskset, issue, config):
+def sync(taskset, issue, config, log_msg = ""):
     if not taskset or not issue or not config:
         return False
 
     bug = taskset[0].bug
     jira_comment = ""
+    synced = False
+
+    def log(msg):
+        nonlocal synced
+        if not synced:
+            print(log_msg)
+            synced = True
+        print(msg)
 
     # Title
     # Title may change in LP and we want to make sure
@@ -236,7 +244,7 @@ def sync(taskset, issue, config):
     jira_title = issue.fields.summary
 
     if lp_title not in jira_title:
-        print("-> Syncing title for {}".format(issue.key))
+        log("-> Syncing title for {}".format(issue.key))
         jira_title = jira_title[:jira_title.index(']')+2] + lp_title
         jira_comment = jira_comment + (
             ('{{lp-to-jira-sync}} Fixed out of sync title with LP: #%s\n')
@@ -258,7 +266,7 @@ def sync(taskset, issue, config):
         sponsor = 'https://api.launchpad.net/devel/~ubuntu-sponsors'
         if sponsor in [x['person_link']
                        for x in bug.subscriptions.entries]:
-            print(" - Fixing status to Sponsoring Needed")
+            log(" - Fixing status to Sponsoring Needed")
             jira_comment = jira_comment + (
                 ('{{lp-to-jira-sync}} ubuntu sponsors team is subscribed '
                  'to the bug which means it should move to Sponsoring '
@@ -271,7 +279,7 @@ def sync(taskset, issue, config):
 
     # sync Status
     if issue.fields.status.name == 'Untriaged':
-        print("-> Updating Status for {} to Triaged".format(issue.key))
+        log("-> Updating Status for {} to Triaged".format(issue.key))
         jira_comment = jira_comment + (
            ('{{lp-to-jira-sync}} %s should be Triaged\n') % (config.tag)
         )
@@ -286,7 +294,7 @@ def sync(taskset, issue, config):
     checkstr = checklist(taskset)
     jiracheckstr = issue.fields.customfield_10039
     if checkstr and checkstr != jiracheckstr:
-        print("-> Updating Checklist for {}".format(issue.key))
+        log("-> Updating Checklist for {}".format(issue.key))
         issue.update(fields={'customfield_10039': checkstr})
         jira_comment = jira_comment + (
             ('{{lp-to-jira-sync}} Updating Checklist according to LP: #%s\n')
@@ -307,7 +315,7 @@ def sync(taskset, issue, config):
             if not jira_who:
                 account = config.team_ids[lp_who]['id']
                 issue.update(assignee={'id': account})
-                print("-> Updating assignee for {} to {}".format(
+                log("-> Updating assignee for {} to {}".format(
                     issue.key,
                     config.team_ids[lp_who]['name']))
                 jira_comment = jira_comment + (
@@ -320,7 +328,7 @@ def sync(taskset, issue, config):
     importance = jira_priorities_mapping[lp_importance(taskset)]
     priority = jira_priority(issue)
     if importance != priority:
-        print("-> Syncing Priority for {} to {}".format(
+        log("-> Syncing Priority for {} to {}".format(
             issue.key, importance))
         issue.update(priority={"name": importance})
         jira_comment = jira_comment + (
@@ -346,7 +354,7 @@ def sync(taskset, issue, config):
             component not in issue_components and
             component in config.jira_components
         ):
-            print("-> Updating Components for {} to {}"
+            log("-> Updating Components for {} to {}"
                   .format(issue.key, component))
             issue.update(fields={"components": []})
             issue.update(
@@ -385,17 +393,18 @@ def process_issues(all_tasks, all_issues, config):
     for bugset in all_tasks:
         if bugset in all_issues:
             # bug are active in both LP and Jira
-            print("A: LP: #{} [{}] is in Jira as {}"
+            log_msg = ("LP-Jira: LP: #{} [{}] is in Jira as {}"
                   .format(bugset[0], bugset[1], all_issues[bugset].key))
             if not config.dry_run:
                 sync(
                     all_tasks[bugset],
                     all_issues[bugset],
-                    config)
+                    config,
+                    log_msg)
             del all_issues[bugset]
         else:
             # bugs only active in LP
-            print("B: LP: #{} [{}] is not active in Jira"
+            log_msg = ("LP Only: LP: #{} [{}] is not active in Jira"
                   .format(bugset[0], bugset[1]))
 
             # Checking if the bug is inactive in Jira
@@ -424,11 +433,12 @@ def process_issues(all_tasks, all_issues, config):
                 sync(
                     all_tasks[bugset],
                     jira_issue,
-                    config)
+                    config,
+                    log_msg)
 
     for issue in all_issues:
         # bugs only active in Jira
-        print("C: LP: #{} [{}] is in Jira as {} but not tagged in LP".format(
+        print("Jira Only: LP: #{} [{}] is in Jira as {} but not tagged in LP".format(
             issue[0], issue[1],  all_issues[issue].key))
         comment = (
             '{{lp-to-jira-sync}} LP: #%s is either not tagged %s or active at '
