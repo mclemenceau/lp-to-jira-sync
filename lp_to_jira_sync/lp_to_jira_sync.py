@@ -285,7 +285,7 @@ def sync(taskset, issue, config, log_msg = ""):
         )
         config.jira.transition_issue(
             issue,
-            transition='All'
+            transition='Triaged'
         )
 
     # Sync Checklist
@@ -419,7 +419,7 @@ def process_issues(all_tasks, all_issues, config):
                 if not config.dry_run:
                     config.jira.transition_issue(
                         jira_issue,
-                        transition='All'
+                        transition='Triaged'
                     )
                     config.jira.add_comment(jira_issue, comment)
             else:
@@ -438,7 +438,9 @@ def process_issues(all_tasks, all_issues, config):
 
     for issue in all_issues:
         # bugs only active in Jira
-        print("Jira Only: LP: #{} [{}] is in Jira as {} but not tagged in LP".format(
+        print((
+                'Jira Only: LP: #{} [{}] is in Jira as {} but not tagged or '
+                'active in LP').format(
             issue[0], issue[1],  all_issues[issue].key))
         comment = (
             '{{lp-to-jira-sync}} LP: #%s is either not tagged %s or active at '
@@ -516,6 +518,8 @@ def main(args=None):
                 'Confirmed',
                 'Fix Released']
 
+    # TODO searchTasks could return lazr.restfulclient.errors.ServerError:
+    # HTTP Error 503: Service Unavailable, Should probably catch this exception
     tasks = config.lp.bugs.searchTasks(tags=config.tag, status=statuses)
     print(" - Found {} bug's task{} in LaunchPad".format(
         len(tasks), "s" if len(tasks) > 1 else "")
@@ -524,9 +528,8 @@ def main(args=None):
     # Remove tasks that affects non ubscribed ackages
     refined_tasks = refine_tasks(tasks, config)
 
-    print(" - Found {} valid {} bug's task{}".format(
-        len(refined_tasks), "s" if len(refined_tasks) > 1 else "",
-        config.tag)
+    print(" - Found {} valid bug's task{}".format(
+        len(refined_tasks), "s" if len(refined_tasks) > 1 else "")
     )
 
     # Create a set of all active Jira issues
