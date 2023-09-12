@@ -117,7 +117,7 @@ def checklist(bugtasks):
 
     checklist_str = "# Default checklist"
     for task in bugtasks:
-        checked = "x" if task.is_complete else ""
+        checked = "done" if task.is_complete else "open"
         checklist_str = checklist_str + "\n* [{}] {} - {} - {}".format(
             checked,
             task.title.split(":")[0].split("in ")[1],
