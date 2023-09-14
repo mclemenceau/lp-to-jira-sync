@@ -493,6 +493,13 @@ def main(args=None):
         type=str,
         help='mapping of Jira Components to Launchpad packages')
 
+    parser.add_argument(
+        '-j',
+        '--jira-token',
+        dest='jira_token',
+        type=str,
+        help='specify a jira token file other than the default ~/.jira.token')
+
     opts = parser.parse_args(args)
 
     config = SyncConfig(
@@ -503,7 +510,8 @@ def main(args=None):
         special_packages=['subiquity', 'netplan', 'apport', 'ubuntu-cdimage'],
         dry_run=opts.dry_run,
         team_ids_json=opts.team_ids,
-        packages_mapping_json=opts.components_mapping
+        packages_mapping_json=opts.components_mapping,
+        jira_token=opts.jira_token
         )
 
     print("Found {} subscribed packages by team {}"

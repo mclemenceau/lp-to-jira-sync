@@ -13,6 +13,7 @@ teampkgs =\
 class SyncConfig:
     def __init__(self,
                  jira=None,
+                 jira_token="",
                  project="",
                  lp_api=None,
                  lp_tag="",
@@ -26,7 +27,12 @@ class SyncConfig:
         if not jira:
             try:
                 print("initializing Jira API ....")
-                jira_cfg = jira_config()
+                jira_cfg = None
+                if jira_token:
+                    jira_cfg = jira_config(credstore=jira_token)
+                else:
+                    jira_cfg = jira_config()
+
                 self.jira = JIRA(
                     jira_cfg.server,
                     basic_auth=(jira_cfg.login, jira_cfg.token))
