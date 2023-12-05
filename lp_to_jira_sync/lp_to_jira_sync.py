@@ -1,6 +1,8 @@
 import argparse
 
 from lp_to_jira_sync.sync_config import SyncConfig
+from jira.resources import Issue
+from typing import Any
 
 
 jira_priorities_mapping = {'Unknown': 'Medium',
@@ -11,6 +13,7 @@ jira_priorities_mapping = {'Unknown': 'Medium',
                            'Low': 'Low',
                            'Wishlist': 'Lowest'}
 
+Bugset = tuple[int, str]
 
 # Create a Jira Entry from a LP bugset (list of tasks relevant to a bug and
 # package)
@@ -368,7 +371,7 @@ def sync(taskset, issue, config, log_msg = ""):
         config.jira.add_comment(issue, jira_comment)
 
 
-def process_issues(all_tasks, all_issues, config):
+def process_issues(all_tasks: dict[Bugset, list], all_issues: dict[Bugset, Issue], config):
     # Between All subscribed bug in LP and all bug imported in JIRA, there's
     # 3 Groups:
     #   A: bug are active in both LP and Jira
