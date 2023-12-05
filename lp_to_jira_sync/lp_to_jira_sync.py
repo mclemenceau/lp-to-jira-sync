@@ -370,7 +370,17 @@ def sync(taskset, issue, config, log_msg = ""):
     if jira_comment:
         config.jira.add_comment(issue, jira_comment)
 
-def revert_jira_status(config: SyncConfig, jira_issue: Issue):
+def revert_jira_status(config: SyncConfig, jira_issue: Issue, tasks: list):
+    not_progressing = (t for t in tasks if t.status in (
+        'New',
+        'Confirmed',
+        'Incomplete',
+        'Triaged'
+        ))
+    if not any(not_progressing):
+        print(f"Not reverting status for {jira_issue.id} since all LP task are progressing.")
+        return
+
     comment = (
         '{{lp-to-jira-sync}} This Bug is still active and tagged '
         '%s in LP. It wil be moved to the Backlog as Triaged. '
@@ -426,7 +436,7 @@ def process_issues(all_tasks: dict[Bugset, list], all_issues: dict[Bugset, Issue
             # Checking if the bug is inactive in Jira
             jira_issue = is_bug_in_jira(config.jira, bugset, config.project)
             if jira_issue and str(jira_issue.fields.status) in ('Done', 'Rejected'):
-                revert_jira_status(config, jira_issue)
+                revert_jira_status(config, jira_issue, all_tasks[bugset])
             else:
                 if not config.dry_run:
                     jira_issue = lp_to_jira_bug(
