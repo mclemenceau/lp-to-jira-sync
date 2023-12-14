@@ -7,7 +7,7 @@ from launchpadlib.launchpad import Launchpad
 from lp_to_jira_sync.jira_config import jira_config
 
 teampkgs =\
-    'https://reqorts.qa.ubuntu.com/reports/m-r-package-team-mapping.json'
+    'http://reqorts.qa.ubuntu.com/reports/m-r-package-team-mapping.json'
 
 
 class SyncConfig:
