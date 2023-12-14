@@ -1,6 +1,8 @@
 import argparse
 
 from lp_to_jira_sync.sync_config import SyncConfig
+from jira.resources import Issue
+from typing import Any
 
 
 jira_priorities_mapping = {'Unknown': 'Medium',
@@ -11,6 +13,7 @@ jira_priorities_mapping = {'Unknown': 'Medium',
                            'Low': 'Low',
                            'Wishlist': 'Lowest'}
 
+Bugset = tuple[int, str]
 
 # Create a Jira Entry from a LP bugset (list of tasks relevant to a bug and
 # package)
@@ -367,8 +370,31 @@ def sync(taskset, issue, config, log_msg = ""):
     if jira_comment:
         config.jira.add_comment(issue, jira_comment)
 
+def revert_jira_status(config: SyncConfig, jira_issue: Issue, tasks: list):
+    not_progressing = (t for t in tasks if t.status in (
+        'New',
+        'Confirmed',
+        'Incomplete',
+        'Triaged'
+        ))
+    if not any(not_progressing):
+        print(f"Not reverting status for {jira_issue.id} since all LP task are progressing.")
+        return
 
-def process_issues(all_tasks, all_issues, config):
+    comment = (
+        '{{lp-to-jira-sync}} This Bug is still active and tagged '
+        '%s in LP. It wil be moved to the Backlog as Triaged. '
+        'If no work is necessary or the bug isn\'t relevant '
+        'anymore, please untag the bug in LP.') % (config.tag)
+    if not config.dry_run:
+        config.jira.transition_issue(
+            jira_issue,
+            transition='Triaged'
+        )
+        config.jira.add_comment(jira_issue, comment)
+
+
+def process_issues(all_tasks: dict[Bugset, list], all_issues: dict[Bugset, Issue], config):
     # Between All subscribed bug in LP and all bug imported in JIRA, there's
     # 3 Groups:
     #   A: bug are active in both LP and Jira
@@ -409,19 +435,8 @@ def process_issues(all_tasks, all_issues, config):
 
             # Checking if the bug is inactive in Jira
             jira_issue = is_bug_in_jira(config.jira, bugset, config.project)
-            if jira_issue and (str(jira_issue.fields.status)
-                               in ('Done', 'Rejected')):
-                comment = (
-                    '{{lp-to-jira-sync}} This Bug is still active and tagged '
-                    '%s in LP. It wil be moved to the Backlog as Triaged. '
-                    'If no work is necessary or the bug isn\'t relevant '
-                    'anymore, please untag the bug in LP.') % (config.tag)
-                if not config.dry_run:
-                    config.jira.transition_issue(
-                        jira_issue,
-                        transition='Triaged'
-                    )
-                    config.jira.add_comment(jira_issue, comment)
+            if jira_issue and str(jira_issue.fields.status) in ('Done', 'Rejected'):
+                revert_jira_status(config, jira_issue, all_tasks[bugset])
             else:
                 if not config.dry_run:
                     jira_issue = lp_to_jira_bug(
