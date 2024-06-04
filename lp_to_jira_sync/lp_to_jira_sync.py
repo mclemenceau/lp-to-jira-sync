@@ -25,11 +25,13 @@ def lp_to_jira_bug(sync_bug_id, sync_bug_tasks, config):
 
     lpbug = sync_bug_tasks[0].bug
 
+    summary = 'LP#{} [{}] {}'.format(
+        sync_bug_id[0], sync_bug_id[1],lpbug.title)
+
+    # Jira API doesn't accept summary over 255 characters
     issue_dict = {
         'project': config.project,
-        'summary': 'LP#{} [{}] {}'.format(
-            sync_bug_id[0], sync_bug_id[1],
-            lpbug.title),
+        'summary': summary[:255],
         'description': lpbug.description,
         'issuetype': {'name': 'Bug'}
     }
@@ -243,17 +245,16 @@ def sync(taskset, issue, config, log_msg = ""):
     # Title may change in LP and we want to make sure
     # it match the title in Jira
     # TODO: write sync title function
-    lp_title = bug.title
     jira_title = issue.fields.summary
-
-    if lp_title not in jira_title:
+    new_title = jira_title[:jira_title.index(']')+2] + bug.title
+    
+    if jira_title not in new_title:
         log("-> Syncing title for {}".format(issue.key))
-        jira_title = jira_title[:jira_title.index(']')+2] + lp_title
         jira_comment = jira_comment + (
             ('{{lp-to-jira-sync}} Fixed out of sync title with LP: #%s\n')
             % (bug.id)
         )
-        issue.update(summary=jira_title)
+        issue.update(summary=new_title[:255])
 
     # Status
     # At this stage at a minimum the issue should be in Triaged but other
