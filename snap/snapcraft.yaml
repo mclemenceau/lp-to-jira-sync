@@ -1,0 +1,31 @@
+name: lp-to-jira-sync
+base: core22
+version: '0.2'
+summary: CLI to asutomatically sync Launchpad Bugs with a Jira Project
+description: |
+  lp-to-jira-sync allows you to sync bugs assigned to a specific group with
+  a specific tag to be synced with a project in Jira
+
+grade: stable
+confinement: strict
+
+parts:
+  lp-to-jira-sync:
+    plugin: python
+    build-environment:
+      - PYTHONPATH: "$SNAPCRAFT_PART_INSTALL/usr/lib/python3/dist-packages"
+    stage-packages:
+      - python3-wheel
+    python-packages:
+      - jira == 3.0.1
+      - launchpadlib
+    source: .
+
+apps:
+  lp-to-jira-sync:
+    command: bin/lp-to-jira-sync
+    plugs:
+      - network
+      - home
+    environment:
+      LANG: C.UTF-8
