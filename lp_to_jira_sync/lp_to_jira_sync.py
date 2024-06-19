@@ -379,7 +379,7 @@ def revert_jira_status(config: SyncConfig, jira_issue: Issue, tasks: list):
         'Triaged'
         ))
     if not any(not_progressing):
-        print(f"Not reverting status for {jira_issue.id} since all LP task are progressing.")
+        print(f"Not reverting status for {jira_issue.key} since all LP task are progressing.")
         return
 
     comment = (
