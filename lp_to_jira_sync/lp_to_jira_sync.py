@@ -29,10 +29,11 @@ def lp_to_jira_bug(sync_bug_id, sync_bug_tasks, config):
         sync_bug_id[0], sync_bug_id[1],lpbug.title)
 
     # Jira API doesn't accept summary over 255 characters
+    # Jira API doesn't accept description over 32767 characters
     issue_dict = {
         'project': config.project,
         'summary': summary[:255],
-        'description': lpbug.description,
+        'description': lpbug.description[:32767],
         'issuetype': {'name': 'Bug'}
     }
 
