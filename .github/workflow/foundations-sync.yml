@@ -1,0 +1,32 @@
+name: Run Script Hourly
+
+on:
+  workflow_dispatch: # Enables manual triggers
+#  schedule:
+    # Runs the workflow every hour (at minute 0)
+#    - cron: '0 * * * *'
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Set up Python 
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      # Install dependencies and project
+      - name: Pip Install
+        run: |
+          pip install jira
+          pip install .
+
+      # test lp-to-jira-sync
+      - name: Test run
+        run: lp-to-jira-sync --help
