@@ -1,4 +1,4 @@
-name: Run Script Hourly
+name: Foundations Bugs hourly sync
 
 on:
   workflow_dispatch: # Enables manual triggers
