@@ -524,7 +524,7 @@ def main(args=None):
         lp_tag=opts.tag,
         lp_team=opts.team,
         # TODO : Special packages should be a configuration option
-        special_packages=['subiquity', 'netplan', 'apport', 'ubuntu-cdimage', 'ubuntu-image'],
+        special_packages=['subiquity', 'netplan', 'apport', 'ubuntu-cdimage'],
         dry_run=opts.dry_run,
         team_ids_json=opts.team_ids,
         packages_mapping_json=opts.components_mapping,
