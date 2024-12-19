@@ -2,9 +2,9 @@ name: Foundations Bugs hourly sync
 
 on:
   workflow_dispatch: # Enables manual triggers
-#  schedule:
+  schedule:
     # Runs the workflow every hour (at minute 0)
-#    - cron: '0 * * * *'
+    - cron: '0 * * * *'
 
 jobs:
   run-script:
@@ -27,10 +27,6 @@ jobs:
           pip install jira keyring
           pip install .
 
-      - name: Install jq
-        run: sudo apt-get install -y jq
-
-
       - name: Set up Jira API Token and Team JSON Files
         run: |
           # Write secrets to files
@@ -43,5 +39,4 @@ jobs:
         run: |
           lp-to-jira-sync -p FR -t foundations-todo -T foundations-bugs \
           -i team_members.json -j jira_api.json \
-          -c samples/foundations_packages_components_mapping.json \
-          --dry-run
+          -c samples/foundations_packages_components_mapping.json
