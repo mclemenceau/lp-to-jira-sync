@@ -41,6 +41,9 @@ jobs:
           echo "Checking file existence and size:"
           ls -l team_members.json jira_api.json
 
+          od -c team_members.json
+          od -c jira_api.json
+
           # Validate JSON structure for team_members.json
           echo "Validating JSON structure:"
           jq empty team_members.json || echo "team_members.json is not valid JSON"
@@ -53,9 +56,6 @@ jobs:
       # test lp-to-jira-sync
       - name: Test run
         run: |
-          ls -l
-          cat jira_api.json
-          cat team_members.json
           lp-to-jira-sync -p FR -t foundations-todo -T foundations-bugs \
           -i team_members.json -j jira_api.json \
           -c samples/foundations_packages_components_mapping.json \
