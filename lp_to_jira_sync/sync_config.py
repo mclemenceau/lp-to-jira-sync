@@ -49,8 +49,9 @@ class SyncConfig:
 
         if not lp_api:
             print("initializing LaunchPad API ....")
-            self.lp = Launchpad.login_with(
-                'lp-subscribed-bugs', 'production', version='devel'
+            # login anonymously to prevent interactive Auth prompt
+            self.lp = Launchpad.login_anonymously(
+                'just testing', 'production', version='devel'
             )
         else:
             self.lp = lp_api
