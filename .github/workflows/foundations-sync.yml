@@ -29,8 +29,8 @@ jobs:
 
       - name: Set up Jira API Token and Team JSON Files
         run: |
-          echo "${{ secrets.TEAM_MEMBERS_JSON }}" > team_members.json
-          echo "${{ secrets.JIRA_API_TOKEN }}" > jira_api.json
+          printf "%s" "${{ secrets.TEAM_MEMBERS_JSON }}" > team_members.json
+          printf "%s" "${{ secrets.JIRA_API_TOKEN }}" > jira_api.json
 
       # Run the command 
       # test lp-to-jira-sync
