@@ -34,8 +34,7 @@ jobs:
           printf '%s' '${{ secrets.JIRA_API_TOKEN }}' > jira_api.json
 
       # Run the command 
-      # test lp-to-jira-sync
-      - name: Test run
+      - name: Run lp-to-jira-sync
         run: |
           lp-to-jira-sync -p FR -t foundations-todo -T foundations-bugs \
           -i team_members.json -j jira_api.json \
