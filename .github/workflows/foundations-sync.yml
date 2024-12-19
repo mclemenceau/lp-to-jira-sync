@@ -37,6 +37,7 @@ jobs:
       - name: Test run
         run: |
           ls -l
+          cat jira_api.json
           lp-to-jira-sync -p FR -t foundations-todo -T foundations-bugs \
           -i team_members.json -j jira_api.json \
           -c samples/foundations_packages_components_mapping.json \
