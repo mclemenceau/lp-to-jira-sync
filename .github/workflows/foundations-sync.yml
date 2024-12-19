@@ -24,7 +24,7 @@ jobs:
       # Install dependencies and project
       - name: Pip Install
         run: |
-          pip install jira
+          pip install jira keyring
           pip install .
 
       - name: Install jq
