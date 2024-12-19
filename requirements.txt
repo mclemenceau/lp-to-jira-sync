@@ -10,7 +10,7 @@ defusedxml==0.7.1
 distro==1.8.0
 executing==1.2.0
 httplib2==0.22.0
-idna==3.4
+idna==3.7
 importlib-metadata==6.6.0
 iniconfig==2.0.0
 ipython==8.13.2
