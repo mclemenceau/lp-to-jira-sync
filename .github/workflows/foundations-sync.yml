@@ -29,16 +29,13 @@ jobs:
 
       - name: Set up Jira API Token and Team JSON Files
         run: |
-          echo "JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }}" >> $GITHUB_ENV
-          echo "TEAM_MEMBERS_JSON=${{ secrets.TEAM_MEMBERS_JSON }}" >> $GITHUB_ENV
+          echo "${{ secrets.TEAM_MEMBERS_JSON }}" > team_members.json
+          echo "${{ secrets.JIRA_API_TOKEN }}" > jira_api.json
 
       # Run the command 
       # test lp-to-jira-sync
       - name: Test run
         run: |
-          echo "$TEAM_MEMBERS_JSON" > team_members.json
-          echo "$JIRA_API_TOKEN" > jira_api.json
-
           lp-to-jira-sync -p FR -t foundations-todo -T foundations-bugs \
           -i team_members.json -j jira_api.json \
           -c samples/foundations_packages_components_mapping.json \
