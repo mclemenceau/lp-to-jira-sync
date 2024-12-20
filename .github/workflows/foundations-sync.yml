@@ -24,7 +24,6 @@ jobs:
       # Install dependencies and project
       - name: Pip Install
         run: |
-          pip install jira keyring
           pip install .
 
       - name: Set up Jira API Token and Team JSON Files
